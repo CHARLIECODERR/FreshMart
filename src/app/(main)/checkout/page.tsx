@@ -5,11 +5,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useCartStore } from '@/contexts/useCartStore'
-import { ChevronDown, MapPin, Check, Plus } from 'lucide-react'
+import { ChevronDown, MapPin, Check, Plus, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { orderService } from '@/lib/services/orderService'
+import { v4 as uuidv4 } from 'uuid'
+import { Address } from '@/types'
 
 export default function CheckoutPage() {
-    const { user, profile, loading } = useAuth()
+    const { user, profile, loading, updateAddresses } = useAuth()
     const router = useRouter()
     const cartItems = useCartStore(state => state.items)
     const cartTotal = useCartStore(state => state.total())
@@ -19,6 +22,8 @@ export default function CheckoutPage() {
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
     const [placingOrder, setPlacingOrder] = useState(false)
     const [orderSuccess, setOrderSuccess] = useState(false)
+    const [showAddressModal, setShowAddressModal] = useState(false)
+    const [isSavingAddress, setIsSavingAddress] = useState(false)
 
     const addresses = profile?.addresses || []
 
@@ -43,19 +48,95 @@ export default function CheckoutPage() {
     const totalAmount = cartTotal + deliveryFee
 
     const handlePlaceOrder = async () => {
-        if (!selectedAddressId) {
+        if (!user || !profile) return
+        if (!selectedAddressId || !selectedAddress) {
             toast.error('Please select a delivery address')
             return
         }
 
         setPlacingOrder(true)
-        // Simulate API call to save order in Firestore later
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        try {
+            const orderData = {
+                user_id: user.uid,
+                address_snapshot: selectedAddress,
+                items: cartItems.map(item => ({
+                    id: uuidv4(),
+                    order_id: '', // Will be set by service/DB logic if needed, but snapshot is key
+                    product_id: item.product_id,
+                    product_snapshot: {
+                        name: item.product.name,
+                        image_url: item.product.image_url || null,
+                        unit: item.product.unit,
+                        price: item.product.price
+                    },
+                    quantity: item.quantity,
+                    unit_price: item.product.price
+                })),
+                subtotal: cartTotal,
+                delivery_fee: deliveryFee,
+                total: totalAmount,
+                discount: 0,
+                coupon_code: null,
+                payment_method: paymentMethod as any,
+                payment_status: 'pending' as any,
+                notes: '',
+                events: [
+                    {
+                        id: uuidv4(),
+                        order_id: '',
+                        status: 'placed' as any,
+                        note: 'Order placed successfully',
+                        created_at: new Date().toISOString()
+                    }
+                ]
+            }
 
-        setPlacingOrder(false)
-        setOrderSuccess(true)
-        clearCart()
-        toast.success('Order placed successfully!')
+            const result = await orderService.createOrder(orderData as any)
+            if (result.success) {
+                setOrderSuccess(true)
+                clearCart()
+                toast.success('Order placed successfully!')
+            }
+        } catch (error) {
+            toast.error('Failed to place order. Please try again.')
+        } finally {
+            setPlacingOrder(false)
+        }
+    }
+
+    const handleAddAddress = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        if (!profile || !user) return
+        if (addresses.length >= 3) {
+            toast.error('Maximum 3 addresses allowed')
+            return
+        }
+
+        setIsSavingAddress(true)
+        const formData = new FormData(e.currentTarget)
+        const newAddr: Address = {
+            id: uuidv4(),
+            label: formData.get('label') as string,
+            full_name: formData.get('full_name') as string,
+            phone: formData.get('phone') as string,
+            email: profile.email || '',
+            address_line: formData.get('address_line') as string,
+            city: formData.get('city') as string,
+            pincode: formData.get('pincode') as string,
+            is_default: addresses.length === 0
+        }
+
+        try {
+            const updated = [...addresses, newAddr]
+            await updateAddresses(updated)
+            setSelectedAddressId(newAddr.id)
+            setShowAddressModal(false)
+            toast.success('Address added!')
+        } catch (err) {
+            toast.error('Failed to save address')
+        } finally {
+            setIsSavingAddress(false)
+        }
     }
 
     if (loading) return <div className="min-h-screen bg-background pt-20 px-6 text-center">Loading checkout...</div>
@@ -101,9 +182,12 @@ export default function CheckoutPage() {
                                 <div className="w-8 h-8 rounded-lg bg-primary-50 text-primary-500 flex items-center justify-center">📍</div>
                                 Delivery Address
                             </h3>
-                            <Link href="/account/addresses" className="text-primary-600 text-xs font-bold hover:underline bg-primary-50 px-3 py-1.5 rounded-full">
-                                Manage Addresses
-                            </Link>
+                            <button
+                                onClick={() => setShowAddressModal(true)}
+                                className="text-primary-600 text-xs font-bold hover:underline bg-primary-50 px-3 py-1.5 rounded-full"
+                            >
+                                Add New Address
+                            </button>
                         </div>
 
                         {addresses.length === 0 ? (
@@ -265,6 +349,55 @@ export default function CheckoutPage() {
                     {placingOrder ? 'Processing...' : 'Place Order'}
                 </button>
             </div>
+            {/* Address Modal */}
+            {showAddressModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl animate-scale-in relative">
+                        <button
+                            onClick={() => setShowAddressModal(false)}
+                            className="absolute top-6 right-6 p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <h3 className="font-bold text-xl mb-6 text-gray-900">Add New Address</h3>
+
+                        <form className="space-y-4" onSubmit={handleAddAddress}>
+                            <div className="grid grid-cols-3 gap-2 pb-2">
+                                {['Home', 'Work', 'Other'].map(l => (
+                                    <label key={l} className="relative cursor-pointer group">
+                                        <input type="radio" name="label" value={l} className="peer sr-only" defaultChecked={l === 'Home'} />
+                                        <div className="px-3 py-2 text-center rounded-xl border border-slate-200 text-xs font-bold text-slate-500 transition-all peer-checked:bg-primary-50 peer-checked:border-primary-400 peer-checked:text-primary-700 group-hover:bg-slate-50">
+                                            {l}
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+
+                            <input name="full_name" type="text" placeholder="Full Name" className="w-full bg-slate-50 border-transparent focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50 rounded-xl px-4 py-3 text-sm transition-all shadow-inner outline-none" required />
+                            <input name="phone" type="tel" pattern="[0-9]{10}" title="Please enter a valid 10-digit phone number" placeholder="10-digit Phone Number" className="w-full bg-slate-50 border-transparent focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50 rounded-xl px-4 py-3 text-sm transition-all shadow-inner outline-none" required />
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <input name="city" type="text" placeholder="City" className="w-full bg-slate-50 border-transparent focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50 rounded-xl px-4 py-3 text-sm transition-all shadow-inner outline-none" required />
+                                <input name="pincode" type="text" pattern="[0-9]{6}" title="6-digit pincode" placeholder="Pincode" className="w-full bg-slate-50 border-transparent focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50 rounded-xl px-4 py-3 text-sm transition-all shadow-inner outline-none" required />
+                            </div>
+
+                            <textarea name="address_line" placeholder="Flat No, Building, Road name, Area..." rows={3} className="w-full bg-slate-50 border-transparent focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50 rounded-xl px-4 py-3 text-sm transition-all shadow-inner outline-none resize-none" required />
+
+                            <div className="flex gap-3 pt-6">
+                                <button type="button" onClick={() => setShowAddressModal(false)} className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition-colors">Cancel</button>
+                                <button
+                                    type="submit"
+                                    disabled={isSavingAddress}
+                                    className="flex-1 btn-primary py-3 rounded-xl disabled:opacity-50"
+                                >
+                                    {isSavingAddress ? 'Saving...' : 'Save Address'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

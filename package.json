@@ -21,6 +21,7 @@
     "autoprefixer": "^10.4.27",
     "clsx": "^2.1.1",
     "cookies-next": "^4.1.1",
+    "date-fns": "^4.1.0",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
     "framer-motion": "^12.35.2",

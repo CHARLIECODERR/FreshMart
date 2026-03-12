@@ -4,37 +4,68 @@ import React from 'react'
 import Link from 'next/link'
 import { ArrowLeft, CheckCircle2, Circle, Truck, Package, MapPin, Download } from 'lucide-react'
 
-// Dummy order detail
-const order = {
-    id: 'ORD-12345',
-    date: 'Oct 12, 2023, 10:30 AM',
-    status: 'Out for Delivery',
-    itemsTotal: 845,
-    deliveryFee: 0,
-    discount: 45,
-    total: 800,
-    paymentMethod: 'Cash on Delivery',
-    address: {
-        name: 'John Doe',
-        line1: 'A-102, Green Valley Apartments',
-        city: 'Mumbai',
-        pincode: '400001'
-    },
-    items: [
-        { name: 'Farm Fresh Tomatoes (Local)', qty: 1, price: 45, unit: '1 kg' },
-        { name: 'Ashirvaad Whole Wheat Atta', qty: 1, price: 260, unit: '5 kg' },
-        { name: 'Farm Fresh Milk (Full Cream)', qty: 2, price: 66, unit: '1 L' }
-    ],
-    timeline: [
-        { status: 'Order Placed', time: '10:30 AM, Oct 12', done: true },
-        { status: 'Order Confirmed', time: '10:35 AM, Oct 12', done: true },
-        { status: 'Packed', time: '11:15 AM, Oct 12', done: true },
-        { status: 'Out for Delivery', time: '11:45 AM, Oct 12', done: true },
-        { status: 'Delivered', time: 'Expected by 12:30 PM', done: false }
-    ]
-}
+import { format } from 'date-fns'
+import { orderService } from '@/lib/services/orderService'
+import { Order } from '@/types'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function OrderDetailPage({ params }: { params: { id: string } }) {
+    const { user, loading: authLoading } = useAuth()
+    const [order, setOrder] = React.useState<Order | null>(null)
+    const [loading, setLoading] = React.useState(true)
+
+    React.useEffect(() => {
+        const fetchOrder = async () => {
+            try {
+                const data = await orderService.getOrderById(params.id)
+                setOrder(data)
+            } finally {
+                setLoading(false)
+            }
+        }
+        if (!authLoading) fetchOrder()
+    }, [params.id, authLoading])
+
+    const getStatusStyles = (status: string) => {
+        switch (status) {
+            case 'delivered': return 'bg-green-100 text-green-700'
+            case 'cancelled': return 'bg-red-100 text-red-700'
+            case 'placed': return 'bg-blue-100 text-blue-700'
+            case 'processing': return 'bg-orange-100 text-orange-700'
+            case 'out_for_delivery': return 'bg-orange-100 text-orange-700'
+            case 'shipped': return 'bg-indigo-100 text-indigo-700'
+            default: return 'bg-gray-100 text-gray-700'
+        }
+    }
+
+    if (loading || authLoading) {
+        return (
+            <div className="animate-pulse space-y-6">
+                <div className="h-10 w-64 bg-gray-100 rounded-lg" />
+                <div className="flex flex-col lg:flex-row gap-6">
+                    <div className="flex-1 space-y-6">
+                        <div className="h-64 bg-gray-50 rounded-2xl" />
+                        <div className="h-64 bg-gray-50 rounded-2xl" />
+                    </div>
+                    <div className="w-full lg:w-[360px] space-y-6">
+                        <div className="h-48 bg-gray-50 rounded-2xl" />
+                        <div className="h-48 bg-gray-50 rounded-2xl" />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (!order) {
+        return (
+            <div className="py-20 text-center">
+                <Package className="mx-auto text-gray-300 mb-4" size={48} />
+                <h2 className="text-xl font-bold text-gray-900">Order not found</h2>
+                <p className="text-gray-500 mt-2 mb-6">We couldn't find the order you're looking for.</p>
+                <Link href="/account/orders" className="btn-primary px-8">Back to Orders</Link>
+            </div>
+        )
+    }
     return (
         <div className="animate-fade-in pb-10">
 
@@ -43,8 +74,8 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                     <ArrowLeft size={20} />
                 </Link>
                 <div>
-                    <h2 className="font-bold text-xl text-gray-900 leading-tight">Order #{params.id}</h2>
-                    <p className="text-xs text-gray-500">{order.date}</p>
+                    <h2 className="font-bold text-xl text-gray-900 leading-tight">Order #{order.id.slice(-6).toUpperCase()}</h2>
+                    <p className="text-xs text-gray-500">{order.created_at ? format(new Date(order.created_at), 'MMM dd, yyyy, hh:mm a') : 'N/A'}</p>
                 </div>
             </div>
 
@@ -61,23 +92,25 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                             {/* Vertical line connector */}
                             <div className="absolute top-2 bottom-2 left-8 w-[2px] bg-gray-100 z-0"></div>
 
-                            {order.timeline.map((step, idx) => (
+                            {/* Dynamically build timeline from status and events */}
+                            {(order.events || []).map((event, idx) => (
                                 <div key={idx} className="relative z-10 flex gap-4 items-start">
                                     <div className="bg-white py-1">
-                                        {step.done ? (
-                                            <CheckCircle2 size={20} className="text-primary-500 fill-primary-50" />
-                                        ) : (
-                                            <Circle size={20} className="text-gray-300" />
-                                        )}
+                                        <CheckCircle2 size={20} className="text-primary-500 fill-primary-50" />
                                     </div>
                                     <div>
-                                        <h4 className={`text-sm font-semibold ${step.done ? 'text-gray-900' : 'text-gray-400'}`}>
-                                            {step.status}
+                                        <h4 className="text-sm font-semibold text-gray-900 capitalize">
+                                            {event.status.replace(/_/g, ' ')}
                                         </h4>
-                                        <p className="text-xs text-gray-500 mt-0.5">{step.time}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">
+                                            {format(new Date(event.created_at), 'hh:mm a, MMM dd')}
+                                        </p>
                                     </div>
                                 </div>
                             ))}
+
+                            {/* If order is not delivered/cancelled, show pending steps? 
+                                For simplicity, we just show active status from snapshots */}
                         </div>
                     </div>
 
@@ -86,18 +119,22 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                         <h3 className="font-bold text-gray-900 mb-4">Items in this order</h3>
 
                         <div className="space-y-4">
-                            {order.items.map((item, idx) => (
+                            {(order.items || []).map((item, idx) => (
                                 <div key={idx} className={`flex justify-between items-start gap-4 ${idx !== 0 ? 'border-t border-gray-100 pt-4' : ''}`}>
                                     <div className="flex gap-4">
-                                        <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center">
-                                            <Package size={20} className="text-gray-400" />
+                                        <div className="w-12 h-12 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden">
+                                            {item.product_snapshot.image_url ? (
+                                                <img src={item.product_snapshot.image_url} alt={item.product_snapshot.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Package size={20} className="text-gray-400" />
+                                            )}
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold text-gray-900 text-sm leading-snug">{item.name}</h4>
-                                            <p className="text-xs text-gray-500 mt-1">{item.unit} × {item.qty}</p>
+                                            <h4 className="font-semibold text-gray-900 text-sm leading-snug">{item.product_snapshot.name}</h4>
+                                            <p className="text-xs text-gray-500 mt-1">{item.product_snapshot.unit} × {item.quantity}</p>
                                         </div>
                                     </div>
-                                    <span className="font-bold text-sm text-gray-900">₹{item.price * item.qty}</span>
+                                    <span className="font-bold text-sm text-gray-900">₹{item.unit_price * item.quantity}</span>
                                 </div>
                             ))}
                         </div>
@@ -113,26 +150,28 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                         <div className="space-y-2.5 text-sm text-gray-600">
                             <div className="flex justify-between">
                                 <span>Items Total</span>
-                                <span className="font-medium text-gray-900">₹{order.itemsTotal}</span>
+                                <span className="font-medium text-gray-900">₹{order.subtotal}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Delivery Fee</span>
-                                <span className="text-primary-600 font-medium">{order.deliveryFee === 0 ? 'FREE' : `₹${order.deliveryFee}`}</span>
+                                <span className="text-primary-600 font-medium">{order.delivery_fee === 0 ? 'FREE' : `₹${order.delivery_fee}`}</span>
                             </div>
-                            <div className="flex justify-between text-accent-600">
-                                <span>Discount</span>
-                                <span className="font-medium">-₹{order.discount}</span>
-                            </div>
+                            {order.discount > 0 && (
+                                <div className="flex justify-between text-accent-600 font-bold">
+                                    <span>Discount</span>
+                                    <span>-₹{order.discount}</span>
+                                </div>
+                            )}
                             <hr className="border-gray-100 my-2" />
                             <div className="flex justify-between items-center">
                                 <span className="font-bold text-gray-900">Total Amount</span>
-                                <span className="font-display font-bold text-lg text-gray-900">₹{order.total}</span>
+                                <span className="font-display font-bold text-2xl text-primary-600">₹{order.total}</span>
                             </div>
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <p className="text-xs text-gray-500 mb-1">Paid via</p>
-                            <p className="font-semibold text-sm text-gray-900">{order.paymentMethod}</p>
+                            <p className="text-xs text-gray-500 mb-1 font-bold uppercase tracking-wider">Paid via</p>
+                            <p className="font-semibold text-sm text-gray-900 uppercase">{order.payment_method}</p>
                         </div>
                     </div>
 
@@ -141,9 +180,10 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                         <div className="flex items-start gap-3 text-sm">
                             <MapPin size={18} className="text-gray-400 mt-0.5 shrink-0" />
                             <div>
-                                <p className="font-semibold text-gray-900">{order.address.name}</p>
-                                <p className="text-gray-600 mt-0.5">{order.address.line1}</p>
-                                <p className="text-gray-600">{order.address.city} - {order.address.pincode}</p>
+                                <p className="font-bold text-gray-900">{order.address_snapshot.full_name}</p>
+                                <p className="text-gray-600 mt-0.5 text-xs">{order.address_snapshot.address_line}</p>
+                                <p className="text-gray-600 text-xs">{order.address_snapshot.city} - {order.address_snapshot.pincode}</p>
+                                <p className="text-slate-400 font-bold mt-2 text-[10px]">📞 {order.address_snapshot.phone}</p>
                             </div>
                         </div>
                     </div>
