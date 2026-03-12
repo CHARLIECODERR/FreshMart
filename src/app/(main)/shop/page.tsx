@@ -1,21 +1,42 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import ProductGrid from '@/components/product/ProductGrid'
 import { Filter, ChevronDown, Check } from 'lucide-react'
 import { Product } from '@/types'
-
-const dummyProducts = [
-    // Using the same dummy data structure for skeleton UI
-    { id: '1', name: 'Product 1', slug: 'p1', price: 100, stock_qty: 10, unit: '1 pc', is_active: true, is_featured: false, created_at: '', category_id: null, description: null, highlights: null, mrp: 120 },
-    { id: '2', name: 'Product 2', slug: 'p2', price: 200, stock_qty: 10, unit: '1 pc', is_active: true, is_featured: false, created_at: '', category_id: null, description: null, highlights: null, mrp: null },
-    { id: '3', name: 'Product 3', slug: 'p3', price: 300, stock_qty: 0, unit: '1 pc', is_active: true, is_featured: false, created_at: '', category_id: null, description: null, highlights: null, mrp: 350 },
-    { id: '4', name: 'Product 4', slug: 'p4', price: 150, stock_qty: 10, unit: '1 kg', is_active: true, is_featured: false, created_at: '', category_id: null, description: null, highlights: null, mrp: null },
-]
+import { db } from '@/lib/firebase/config'
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore'
 
 export default function ShopPage() {
     const [activeSort, setActiveSort] = useState('popular')
     const [showFilters, setShowFilters] = useState(false)
+    const [products, setProducts] = useState<Product[]>([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setLoading(true)
+            try {
+                const q = query(
+                    collection(db, 'products'),
+                    where('is_active', '==', true),
+                    limit(40)
+                )
+                const querySnapshot = await getDocs(q)
+                const prods = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as Product[]
+                setProducts(prods)
+            } catch (error) {
+                console.error('Error fetching products:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchProducts()
+    }, [])
 
     const sortOptions = [
         { id: 'popular', label: 'Popularity' },
@@ -62,13 +83,21 @@ export default function ShopPage() {
             </div>
 
             <div className="px-4 mb-4 text-sm text-gray-500 font-medium">
-                Showing 142 items
+                {loading ? 'Searching for fresh items...' : `Showing ${products.length} items`}
             </div>
 
-            <ProductGrid
-                products={dummyProducts as Product[]}
-                columns="4"
-            />
+            {loading ? (
+                <div className="px-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                        <div key={i} className="aspect-[3/4] bg-gray-100 rounded-2xl animate-pulse" />
+                    ))}
+                </div>
+            ) : (
+                <ProductGrid
+                    products={products}
+                    columns="4"
+                />
+            )}
 
             {/* Filter Drawer Overlay - simplified for MVP layout */}
             {showFilters && (
