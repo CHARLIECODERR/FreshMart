@@ -6,6 +6,7 @@ import { MapPin, Search, ShoppingBag } from 'lucide-react'
 import { useCartStore } from '@/contexts/useCartStore'
 import { useAuth } from '@/hooks/useAuth'
 import UserMenu from './UserMenu'
+import BackButton from '../common/BackButton'
 
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
@@ -28,16 +29,19 @@ export default function Header() {
         >
             <div className="flex items-center justify-between px-4 h-[60px] md:h-[72px] md:px-8 max-w-7xl mx-auto">
 
-                {/* Logo & Location */}
-                <div className="flex flex-col">
-                    <Link href="/" className="flex items-center gap-1 active:opacity-70">
-                        <span className="text-xl md:text-2xl font-display font-bold text-primary-600 tracking-tight">
-                            FreshMart<span className="text-accent-500">.</span>
-                        </span>
-                    </Link>
-                    <div className="flex items-center text-xs text-gray-500 mt-0.5 md:hidden">
-                        <MapPin size={12} className="mr-1 text-primary-500" />
-                        <span className="truncate max-w-[120px]">Delivering to Home</span>
+                {/* Left: Back + Logo */}
+                <div className="flex items-center gap-3">
+                    <BackButton />
+                    <div className="flex flex-col">
+                        <Link href="/" className="flex items-center gap-1 active:opacity-70">
+                            <span className="text-xl md:text-2xl font-display font-bold text-primary-600 tracking-tight">
+                                FreshMart<span className="text-accent-500">.</span>
+                            </span>
+                        </Link>
+                        <div className="flex items-center text-xs text-gray-500 mt-0.5 md:hidden">
+                            <MapPin size={12} className="mr-1 text-primary-500" />
+                            <span className="truncate max-w-[120px]">Delivering to Home</span>
+                        </div>
                     </div>
                 </div>
 
@@ -53,7 +57,7 @@ export default function Header() {
                     </button>
                 </div>
 
-                {/* Actions */}
+                {/* Right: Actions */}
                 <div className="flex items-center gap-4 md:gap-6">
                     <Link href="/search" className="md:hidden text-gray-600 p-2 -mr-2 active:bg-gray-100 rounded-full transition-colors">
                         <Search size={22} />

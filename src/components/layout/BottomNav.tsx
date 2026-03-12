@@ -4,10 +4,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Home, Search, ShoppingBag, User } from 'lucide-react'
 import { useCartStore } from '@/contexts/useCartStore'
+import { useAuth } from '@/hooks/useAuth'
+import UserAvatar from '../common/UserAvatar'
 
 export default function BottomNav() {
     const pathname = usePathname()
     const cartItemCount = useCartStore((state) => state.itemCount())
+    const { profile } = useAuth()
 
     // Hide on desktop and specific routes like checkout/login
     const hiddenRoutes = ['/checkout', '/login', '/signup', '/forgot-password']
@@ -36,12 +39,21 @@ export default function BottomNav() {
                             className="relative flex flex-col items-center justify-center w-full h-full space-y-1 active:scale-95 transition-transform"
                         >
                             <div className="relative">
-                                <Icon
-                                    size={24}
-                                    strokeWidth={isActive ? 2.5 : 2}
-                                    className={`transition-colors duration-200 ${isActive ? 'text-primary-600' : 'text-gray-400'
-                                        }`}
-                                />
+                                {item.label === 'Account' && profile ? (
+                                    <UserAvatar
+                                        name={profile.full_name}
+                                        src={profile.avatar_url}
+                                        size="sm"
+                                        className={`ring-2 ${isActive ? 'ring-primary-500' : 'ring-transparent'}`}
+                                    />
+                                ) : (
+                                    <Icon
+                                        size={24}
+                                        strokeWidth={isActive ? 2.5 : 2}
+                                        className={`transition-colors duration-200 ${isActive ? 'text-primary-600' : 'text-gray-400'
+                                            }`}
+                                    />
+                                )}
 
                                 {/* Cart Badge */}
                                 {item.badge !== undefined && item.badge > 0 && (

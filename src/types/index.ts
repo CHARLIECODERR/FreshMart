@@ -14,6 +14,7 @@ export interface Address {
 
 export interface UserProfile {
     id: string;
+    uid: string;
     full_name: string;
     email: string;
     phone?: string;

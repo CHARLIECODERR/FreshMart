@@ -10,19 +10,21 @@ export const useCartStore = create<CartStore>()(
             addItem: (product: Product, qty: number = 1) => {
                 set((state) => {
                     const existingItem = state.items.find((item) => item.product_id === product.id)
+                    const currentQty = existingItem ? existingItem.quantity : 0
+                    const newQty = Math.min(product.stock_qty, currentQty + qty)
 
                     if (existingItem) {
                         return {
                             items: state.items.map((item) =>
                                 item.product_id === product.id
-                                    ? { ...item, quantity: item.quantity + qty }
+                                    ? { ...item, quantity: newQty }
                                     : item
                             ),
                         }
                     }
 
                     return {
-                        items: [...state.items, { product_id: product.id, quantity: qty, product }],
+                        items: [...state.items, { product_id: product.id, quantity: newQty, product }],
                     }
                 })
             },
@@ -34,11 +36,19 @@ export const useCartStore = create<CartStore>()(
             },
 
             updateQty: (productId: string, qty: number) => {
-                set((state) => ({
-                    items: state.items.map((item) =>
-                        item.product_id === productId ? { ...item, quantity: Math.max(1, qty) } : item
-                    ),
-                }))
+                set((state) => {
+                    const item = state.items.find(i => i.product_id === productId)
+                    if (!item) return state
+
+                    const maxStock = item.product.stock_qty
+                    const newQty = Math.max(1, Math.min(maxStock, qty))
+
+                    return {
+                        items: state.items.map((i) =>
+                            i.product_id === productId ? { ...i, quantity: newQty } : i
+                        ),
+                    }
+                })
             },
 
             clearCart: () => set({ items: [] }),

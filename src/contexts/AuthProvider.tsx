@@ -34,6 +34,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
                 const data = docSnap.data()
                 setProfile({
                     id: docSnap.id,
+                    uid: docSnap.id,
                     full_name: data.full_name || 'User',
                     email: data.email || '',
                     role: data.role || 'customer',
@@ -45,6 +46,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
             } else {
                 setProfile({
                     id: uid,
+                    uid: uid,
                     full_name: 'Guest User',
                     email: '',
                     role: 'customer',

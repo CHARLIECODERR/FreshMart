@@ -10,7 +10,8 @@ import {
     updateProfile as updateFirebaseAuthProfile,
     GoogleAuthProvider,
     signInWithPopup,
-    getAdditionalUserInfo
+    getAdditionalUserInfo,
+    sendEmailVerification
 } from 'firebase/auth'
 import { UserProfile, Address } from '@/types'
 
@@ -56,6 +57,9 @@ export const useAuth = () => {
             created_at: new Date().toISOString()
         })
 
+        // Send email verification
+        await sendEmailVerification(user)
+
         await context.refreshProfile()
         return user
     }
@@ -68,6 +72,9 @@ export const useAuth = () => {
 
     const logout = async () => {
         await signOut(auth)
+        // Clear session cookies if any (handled by deleteCookie in some setups, 
+        // but here we just need to ensure the AuthProvider state resets which it does via onAuthStateChanged)
+        window.location.href = '/'
     }
 
     const forgotPassword = async (email: string) => {

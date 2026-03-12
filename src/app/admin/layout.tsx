@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Store, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Verified } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import UserAvatar from '@/components/common/UserAvatar'
 
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -84,9 +85,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 <div className="p-4 border-t border-white/10">
                     <div className="flex items-center gap-3 px-3 py-3 rounded-lg bg-white/5 border border-white/10 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-primary-500 text-white flex items-center justify-center font-bold text-sm">
-                            {profile?.full_name?.charAt(0) || 'A'}
-                        </div>
+                        <UserAvatar
+                            name={profile?.full_name}
+                            src={profile?.avatar_url}
+                            size="sm"
+                            className="border-white/10"
+                        />
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">{profile?.full_name || 'Admin User'}</p>
                             <p className="text-xs text-slate-400 truncate">Store Manager</p>

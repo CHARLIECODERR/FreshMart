@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { User, LogOut, Settings, ShoppingBag, MapPin, LayoutDashboard } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
+import UserAvatar from '../common/UserAvatar'
 
 export default function UserMenu() {
     const { profile, logout } = useAuth()
@@ -34,13 +35,11 @@ export default function UserMenu() {
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center gap-2 p-1 rounded-full hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200"
             >
-                <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 overflow-hidden border border-primary-200">
-                    {profile.avatar_url ? (
-                        <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
-                    ) : (
-                        <User size={18} />
-                    )}
-                </div>
+                <UserAvatar
+                    name={profile.full_name}
+                    src={profile.avatar_url}
+                    size="sm"
+                />
                 <span className="hidden md:block text-sm font-semibold text-slate-700 pr-1">
                     {profile.full_name.split(' ')[0]}
                 </span>

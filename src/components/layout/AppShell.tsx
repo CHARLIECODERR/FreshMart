@@ -5,6 +5,8 @@ import Header from './Header'
 import BottomNav from './BottomNav'
 import Footer from './Footer'
 import InstallPrompt from '../pwa/InstallPrompt'
+import AnnouncementBar from '../home/AnnouncementBar'
+import { usePathname } from 'next/navigation'
 
 interface AppShellProps {
     children: React.ReactNode
@@ -12,6 +14,8 @@ interface AppShellProps {
 
 export default function AppShell({ children }: AppShellProps) {
     const [mounted, setMounted] = useState(false)
+    const pathname = usePathname()
+    const isAdmin = pathname.startsWith('/admin')
 
     // Avoid hydration mismatch
     useEffect(() => {
@@ -20,15 +24,27 @@ export default function AppShell({ children }: AppShellProps) {
 
     if (!mounted) return null
 
+    // If Admin route, don't show the main app layout elements
+    if (isAdmin) {
+        return (
+            <div className="min-h-screen bg-slate-50 w-full overflow-hidden">
+                {children}
+            </div>
+        )
+    }
+
     return (
         <div className="relative flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white shadow-2xl overflow-hidden md:max-w-full md:shadow-none md:bg-slate-50">
+            {/* Top Announcement Ticker */}
+            <AnnouncementBar />
+
             {/* Desktop/Web Header */}
             <Header />
 
             {/* Main Scrollable Content Area */}
             <main className="flex-1 w-full pb-[80px] pt-[60px] md:pt-[72px] md:pb-0 overflow-y-auto no-scrollbar md:max-w-7xl md:mx-auto">
                 <div className="min-h-screen">
-                   {children}
+                    {children}
                 </div>
                 {/* Desktop Global Footer */}
                 <Footer />

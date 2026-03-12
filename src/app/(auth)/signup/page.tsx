@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import toast from 'react-hot-toast'
+import { Eye, EyeOff, MailCheck } from 'lucide-react'
 
 export default function SignupPage() {
     const router = useRouter()
@@ -14,6 +15,7 @@ export default function SignupPage() {
     const [email, setEmail] = useState('')
     const [phone, setPhone] = useState('')
     const [password, setPassword] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
@@ -53,20 +55,24 @@ export default function SignupPage() {
     if (success) {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center pt-24 p-4 text-center animate-fade-in">
-                <div className="w-24 h-24 bg-primary-50 rounded-full flex items-center justify-center mb-6 text-4xl text-primary-500 shadow-sm border border-primary-100">
-                    🎉
+                <div className="w-24 h-24 bg-primary-50 rounded-full flex items-center justify-center mb-6 text-primary-500 shadow-sm border border-primary-100">
+                    <MailCheck size={40} />
                 </div>
-                <h1 className="text-3xl font-display font-black text-gray-900 mb-4 tracking-tight">Account Created!</h1>
+                <h1 className="text-3xl font-display font-black text-gray-900 mb-4 tracking-tight">Verify Your Email</h1>
                 <p className="text-gray-500 max-w-sm mb-10 text-base leading-relaxed">
-                    Welcome to <b>FreshMart</b>, {fullName}! Your account is ready. You can now start shopping for fresh groceries.
+                    Welcome to <b>FreshMart</b>, {fullName}! We've sent a verification link to <b>{email}</b>.
+                    Please check your inbox to activate your account.
                 </p>
                 <div className="flex flex-col gap-3 w-full max-w-xs">
                     <Link href="/login" className="btn-primary w-full py-4 text-base shadow-xl shadow-primary-500/20">
-                        Sign In Now
+                        Continue to Login
                     </Link>
-                    <Link href="/" className="text-slate-500 font-bold hover:text-primary-600 transition-colors py-2 text-sm">
-                        Go to Homepage
-                    </Link>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="text-slate-500 font-bold hover:text-primary-600 transition-colors py-2 text-sm"
+                    >
+                        Didn't receive? Try again
+                    </button>
                 </div>
             </div>
         )
@@ -138,17 +144,26 @@ export default function SignupPage() {
                         />
                     </div>
 
-                    <div>
+                    <div className="relative">
                         <label className="block text-sm font-medium text-gray-700 mb-1.5 ml-1">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            minLength={6}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:ring-2 focus:ring-primary-50 focus:border-primary-500 transition-all text-sm outline-none"
-                            placeholder="Min. 6 characters"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 pr-12 focus:bg-white focus:ring-2 focus:ring-primary-50 focus:border-primary-500 transition-all text-sm outline-none"
+                                placeholder="Min. 6 characters"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
 
                     <button
