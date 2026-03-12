@@ -76,20 +76,30 @@ export default function AddProductPage() {
         ? Math.round(((Number(mrp) - Number(price)) / Number(mrp)) * 100)
         : 0
 
+    const [publishStatus, setPublishStatus] = useState<'idle' | 'uploading' | 'saving' | 'done'>('idle')
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!category) return toast.error('Please select a category')
 
         setLoading(true)
+        setPublishStatus('uploading')
 
         try {
             let finalImageUrl = 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&h=400&fit=crop' // fallback
 
             if (imageFile) {
-                finalImageUrl = await uploadImage(imageFile)
+                try {
+                    finalImageUrl = await uploadImage(imageFile)
+                } catch (uploadErr) {
+                    console.error('Upload failed:', uploadErr)
+                    toast.error('Image upload failed. Using fallback.')
+                }
             }
 
+            setPublishStatus('saving')
             const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
             await addDoc(collection(db, 'products'), {
                 name,
                 slug,
@@ -104,11 +114,14 @@ export default function AddProductPage() {
                 created_at: Timestamp.now(),
                 image_url: finalImageUrl
             })
+
+            setPublishStatus('done')
             setSuccess(true)
             toast.success('Product completely saved to Firestore!')
         } catch (error) {
-            console.error(error)
-            toast.error('Failed to save product')
+            console.error('Publishing error:', error)
+            toast.error('Failed to save product details')
+            setPublishStatus('idle')
         } finally {
             setLoading(false)
         }
@@ -334,7 +347,7 @@ export default function AddProductPage() {
                         {loading ? (
                             <>
                                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                {uploadProgress > 0 && uploadProgress < 100 ? 'Uploading...' : 'Publishing...'}
+                                {publishStatus === 'uploading' ? 'Uploading Image...' : 'Saving Product...'}
                             </>
                         ) : 'Publish Product'}
                     </button>

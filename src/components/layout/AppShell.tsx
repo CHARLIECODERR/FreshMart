@@ -36,9 +36,11 @@ export default function AppShell({ children }: AppShellProps) {
     return (
         <div className="relative flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white shadow-2xl overflow-hidden md:max-w-full md:shadow-none md:bg-slate-50">
             {/* Top Fixed Section */}
-            <div className="fixed top-0 w-full z-50 md:max-w-7xl md:left-1/2 md:-translate-x-1/2">
+            <div className="fixed top-0 w-full z-50">
                 <AnnouncementBar />
-                <Header />
+                <div className="md:max-w-7xl md:mx-auto">
+                    <Header />
+                </div>
             </div>
 
             {/* Main Scrollable Content Area */}

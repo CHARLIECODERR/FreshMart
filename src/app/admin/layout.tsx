@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Store, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Verified, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Store, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Verified, Menu, X, Tag } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import UserAvatar from '@/components/common/UserAvatar'
 
@@ -44,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         { label: 'Categories', href: '/admin/categories', icon: FolderTree },
         { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
         { label: 'Banners', href: '/admin/banners', icon: ImageIcon },
+        { label: 'Coupons', href: '/admin/coupons', icon: Tag },
     ]
 
     return (
