@@ -51,13 +51,14 @@ export interface ProductImage {
 export interface Product {
     id: string;
     name: string;
-    description: string;
+    slug: string;
+    description?: string;
     price: number;
     sale_price?: number;
-    image_url: string;
+    image_url?: string;
     category_id: string;
     unit: string;
-    stock: number;
+    stock?: number;
     stock_qty: number;
     mrp: number;
     is_active: boolean;

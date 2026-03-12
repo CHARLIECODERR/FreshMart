@@ -3,13 +3,36 @@
 import React from 'react'
 import ProductGrid from '@/components/product/ProductGrid'
 import { useWishlistStore } from '@/contexts/useWishlistStore'
+import { Product } from '@/types'
 import { Heart } from 'lucide-react'
 import Link from 'next/link'
 
 // Quick dummy data for visual representation of wishlist logic
-const dummyWishlistedProducts = [
-    { id: 'p1', name: 'Fresh Organic Tomatoes (Local)', slug: 'fresh-tomatoes', price: 45, unit: '1 kg', stock_qty: 50, is_active: true, is_featured: false, category_id: null, description: null, highlights: null, mrp: 60, created_at: '', images: [{ id: '1', product_id: 'p1', url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&fit=crop', display_order: 1, is_primary: true }] },
-    { id: 'p3', name: 'Ashirvaad Whole Wheat Atta', slug: 'ashirvaad-atta', price: 260, unit: '5 kg', stock_qty: 15, is_active: true, is_featured: false, category_id: null, description: null, highlights: null, mrp: 295, created_at: '', images: [{ id: '3', product_id: 'p3', url: '/images/atta.png', display_order: 1, is_primary: true }] }
+const dummyWishlistedProducts: Product[] = [
+    {
+        id: 'p1',
+        name: 'Fresh Organic Tomatoes (Local)',
+        slug: 'fresh-tomatoes',
+        price: 45,
+        unit: '1 kg',
+        stock_qty: 50,
+        is_active: true,
+        category_id: 'vegetables',
+        mrp: 60,
+        images: [{ id: '1', product_id: 'p1', url: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=400&fit=crop', display_order: 1, is_primary: true }]
+    },
+    {
+        id: 'p3',
+        name: 'Ashirvaad Whole Wheat Atta',
+        slug: 'ashirvaad-atta',
+        price: 260,
+        unit: '5 kg',
+        stock_qty: 15,
+        is_active: true,
+        category_id: 'staples',
+        mrp: 295,
+        images: [{ id: '3', product_id: 'p3', url: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&fit=crop', display_order: 1, is_primary: true }]
+    }
 ]
 
 export default function WishlistPage() {
