@@ -4,11 +4,13 @@ import CategoryStrip from '@/components/home/CategoryStrip'
 import ProductGrid from '@/components/product/ProductGrid'
 import { ShieldCheck, Truck, Clock, Store } from 'lucide-react'
 import { getCategories, getFeaturedProducts } from '@/lib/services/catalogService'
+import { getBanners } from '@/lib/services/bannerService'
 
 export default async function Home() {
-    const [categories, featuredProducts] = await Promise.all([
+    const [categories, featuredProducts, banners] = await Promise.all([
         getCategories(),
-        getFeaturedProducts()
+        getFeaturedProducts(),
+        getBanners()
     ])
 
     const hasData = categories.length > 0 || featuredProducts.length > 0
@@ -16,7 +18,7 @@ export default async function Home() {
     return (
         <div className="w-full flex flex-col min-h-screen">
             {/* 1. Main Promotional Banners */}
-            <BannerCarousel />
+            <BannerCarousel banners={banners} />
 
             {/* 2. Category Navigation */}
             <CategoryStrip categories={categories} />
