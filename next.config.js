@@ -1,0 +1,27 @@
+const withPWA = require('@ducanh2912/next-pwa').default({
+    dest: 'public',
+    cacheOnFrontEndNav: true,
+    aggressiveFrontEndNavCaching: true,
+    reloadOnOnline: true,
+    swcMinify: true,
+    disable: process.env.NODE_ENV === 'development', // Disable PWA in dev
+    workboxOptions: {
+        disableDevLogs: true,
+    },
+})
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+    images: {
+        remotePatterns: [
+            { protocol: 'https', hostname: '*.supabase.co' },
+            { protocol: 'https', hostname: 'res.cloudinary.com' },
+            { protocol: 'https', hostname: 'images.unsplash.com' },
+        ],
+    },
+    experimental: {
+        optimizePackageImports: ['lucide-react', 'framer-motion'],
+    },
+}
+
+module.exports = withPWA(nextConfig)
