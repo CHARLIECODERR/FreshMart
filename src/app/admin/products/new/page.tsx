@@ -31,10 +31,14 @@ export default function AddProductPage() {
     useEffect(() => {
         const fetchCats = async () => {
             try {
+                console.log('Fetching categories from Firestore...')
                 const querySnapshot = await getDocs(collection(db, 'categories'))
-                setCategories(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[])
+                const cats = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[]
+                console.log('Fetched categories:', cats)
+                setCategories(cats)
             } catch (err) {
-                console.error(err)
+                console.error('Error fetching categories:', err)
+                toast.error('Failed to load categories dropdown')
             }
         }
         fetchCats()
@@ -243,10 +247,18 @@ export default function AddProductPage() {
                                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                             >
                                 <option value="">Select Category</option>
+                                {categories.length === 0 && !loading && (
+                                    <option disabled>No categories found. Add some in Categories page.</option>
+                                )}
                                 {categories.map(cat => (
                                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
                             </select>
+                            {categories.length === 0 && !loading && (
+                                <Link href="/admin/categories" className="text-[10px] text-primary-600 hover:underline mt-1 block font-medium">
+                                    + Add your first category here
+                                </Link>
+                            )}
                         </div>
                         <div className="mt-4 flex items-center gap-3">
                             <input
