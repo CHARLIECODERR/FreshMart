@@ -1,19 +1,17 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Store, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Verified } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutDashboard, Store, ShoppingBag, FolderTree, Image as ImageIcon, LogOut, Verified, Menu, X } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import UserAvatar from '@/components/common/UserAvatar'
-
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const router = useRouter()
     const { profile, loading, logout } = useAuth()
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
     useEffect(() => {
         if (!loading) {
@@ -22,6 +20,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             }
         }
     }, [profile, loading, router])
+
+    // Close sidebar on route change (mobile)
+    useEffect(() => {
+        setIsSidebarOpen(false)
+    }, [pathname])
 
     if (loading) {
         return (
@@ -44,17 +47,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ]
 
     return (
-        <div className="flex h-screen bg-slate-50 font-sans">
+        <div className="flex h-screen bg-slate-50 font-sans relative overflow-hidden">
 
-            {/* Desktop Sidebar */}
-            <aside className="w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-50">
-                <div className="h-16 flex items-center px-6 border-b border-white/10 bg-slate-950">
+            {/* Mobile Overlay */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[55] lg:hidden"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
+            {/* Sidebar */}
+            <aside className={`
+                w-64 bg-slate-900 text-slate-300 flex-shrink-0 flex flex-col fixed inset-y-0 left-0 z-[60] transition-transform duration-300
+                ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+            `}>
+                <div className="h-16 flex items-center justify-between px-6 border-b border-white/10 bg-slate-950">
                     <Link href="/admin" className="font-display font-bold text-xl text-white flex items-center gap-2">
                         <Verified size={24} className="text-primary-400" />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-primary-200">
                             FreshMart OS
                         </span>
                     </Link>
+                    <button className="lg:hidden text-slate-400 hover:text-white" onClick={() => setIsSidebarOpen(false)}>
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
@@ -63,7 +80,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     </div>
 
                     {navLinks.map((item) => {
-                        // Active if exact match or if inside the path (e.g. /admin/products/new is under /admin/products)
                         const isActive = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(item.href))
                         const Icon = item.icon
 
@@ -106,22 +122,31 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col ml-64 bg-slate-50">
+            <main className="flex-1 flex flex-col lg:ml-64 bg-slate-50 w-full overflow-hidden">
 
                 {/* Top Header */}
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-40">
-                    <h1 className="font-semibold text-gray-800 text-lg">
-                        {navLinks.find(n => pathname === n.href || (n.href !== '/admin' && pathname.startsWith(n.href)))?.label || 'Dashboard'}
-                    </h1>
+                <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
+                    <div className="flex items-center gap-4">
+                        <button
+                            className="lg:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                            onClick={() => setIsSidebarOpen(true)}
+                        >
+                            <Menu size={20} />
+                        </button>
+                        <h1 className="font-semibold text-gray-800 text-lg">
+                            {navLinks.find(n => pathname === n.href || (n.href !== '/admin' && pathname.startsWith(n.href)))?.label || 'Dashboard'}
+                        </h1>
+                    </div>
                     <div className="flex items-center gap-4">
                         <Link href="/" className="text-sm text-primary-600 font-medium hover:underline flex items-center gap-1">
-                            Go to Storefeed &rarr;
+                            <span className="hidden sm:inline">Go to Store &rarr;</span>
+                            <span className="sm:hidden">Store &rarr;</span>
                         </Link>
                     </div>
                 </header>
 
                 {/* Page children */}
-                <div className="p-8 overflow-y-auto w-full h-full max-w-7xl mx-auto">
+                <div className="p-4 lg:p-8 overflow-y-auto w-full h-full max-w-7xl mx-auto">
                     {children}
                 </div>
             </main>

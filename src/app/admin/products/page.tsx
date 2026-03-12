@@ -4,33 +4,46 @@ import Link from 'next/link'
 import { Plus, Search, Edit, Trash2, Image as ImageIcon } from 'lucide-react'
 import { db } from '@/lib/firebase/config'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
-import { Product } from '@/types'
+import { Product, Category } from '@/types'
 import toast from 'react-hot-toast'
 
 export default function AdminProductsPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [products, setProducts] = useState<Product[]>([])
+    const [categories, setCategories] = useState<Category[]>([])
+    const [selectedCategory, setSelectedCategory] = useState('all')
+    const [selectedStatus, setSelectedStatus] = useState('all')
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             try {
-                const q = query(collection(db, 'products'), orderBy('created_at', 'desc'))
-                const querySnapshot = await getDocs(q)
-                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[]
-                setProducts(data)
+                // Fetch Products
+                const pq = query(collection(db, 'products'), orderBy('created_at', 'desc'))
+                const pSnap = await getDocs(pq)
+                setProducts(pSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[])
+
+                // Fetch Categories
+                const cSnap = await getDocs(collection(db, 'categories'))
+                setCategories(cSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[])
             } catch (error) {
-                toast.error('Failed to load products')
+                toast.error('Failed to load data')
             } finally {
                 setLoading(false)
             }
         }
-        fetchProducts()
+        fetchData()
     }, [])
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory
+        const matchesStatus = selectedStatus === 'all' ||
+            (selectedStatus === 'active' && p.is_active && p.stock_qty > 0) ||
+            (selectedStatus === 'out' && p.stock_qty <= 0)
+
+        return matchesSearch && matchesCategory && matchesStatus
+    })
 
 
     return (
@@ -42,31 +55,40 @@ export default function AdminProductsPage() {
                     <h1 className="text-2xl font-bold text-slate-900">Products</h1>
                     <p className="text-sm text-slate-500">Manage your store's inventory and catalog</p>
                 </div>
-                <Link href="/admin/products/new" className="px-5 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm flex items-center gap-2">
+                <Link href="/admin/products/new" className="px-5 py-2.5 bg-primary-600 text-white font-medium rounded-xl hover:bg-primary-700 transition-colors shadow-sm flex items-center gap-2 text-sm">
                     <Plus size={18} /> Add Product
                 </Link>
             </div>
 
             {/* Toolbar */}
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center">
-                <div className="relative w-full md:w-96">
+            <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col lg:flex-row gap-4 justify-between items-center">
+                <div className="relative w-full lg:w-96">
                     <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
                         placeholder="Search products by name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
                     />
                 </div>
 
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <select className="border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-primary-500">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="flex-1 lg:flex-none border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50 cursor-pointer transition-all"
+                    >
                         <option value="all">All Categories</option>
-                        <option value="veg">Vegetables</option>
-                        <option value="dairy">Dairy</option>
+                        {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
                     </select>
-                    <select className="border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-primary-500">
+                    <select
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="flex-1 lg:flex-none border border-slate-200 rounded-lg py-2 px-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-primary-500 bg-slate-50 cursor-pointer transition-all"
+                    >
                         <option value="all">All Status</option>
                         <option value="active">Active</option>
                         <option value="out">Out of Stock</option>
@@ -106,7 +128,9 @@ export default function AdminProductsPage() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-6 text-slate-600">Category</td>
+                                    <td className="py-4 px-6 text-slate-600 font-medium">
+                                        {categories.find(c => c.id === product.category_id)?.name || 'Uncategorized'}
+                                    </td>
                                     <td className="py-4 px-6 text-right font-bold text-slate-900">₹{product.price}</td>
                                     <td className="py-4 px-6 text-right">
                                         <span className={`font-semibold ${product.stock_qty <= 15 ? 'text-rose-600' : 'text-slate-700'}`}>

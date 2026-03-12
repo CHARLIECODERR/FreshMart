@@ -24,7 +24,7 @@ export default function Header() {
 
     return (
         <header
-            className={`fixed top-0 w-full z-50 transition-all duration-300 md:max-w-7xl md:left-1/2 md:-translate-x-1/2 ${isScrolled ? 'glass-effect shadow-sm' : 'bg-white'
+            className={`transition-all duration-300 w-full ${isScrolled ? 'glass-effect shadow-sm' : 'bg-white'
                 }`}
         >
             <div className="flex items-center justify-between px-4 h-[60px] md:h-[72px] md:px-8 max-w-7xl mx-auto">

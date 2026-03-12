@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import Header from './Header'
-import BottomNav from './BottomNav'
+import Header from '@/components/layout/Header'
+import BottomNav from '@/components/layout/BottomNav'
 import Footer from './Footer'
 import InstallPrompt from '../pwa/InstallPrompt'
 import AnnouncementBar from '../home/AnnouncementBar'
@@ -35,14 +35,14 @@ export default function AppShell({ children }: AppShellProps) {
 
     return (
         <div className="relative flex flex-col min-h-[100dvh] w-full max-w-md mx-auto bg-white shadow-2xl overflow-hidden md:max-w-full md:shadow-none md:bg-slate-50">
-            {/* Top Announcement Ticker */}
-            <AnnouncementBar />
-
-            {/* Desktop/Web Header */}
-            <Header />
+            {/* Top Fixed Section */}
+            <div className="fixed top-0 w-full z-50 md:max-w-7xl md:left-1/2 md:-translate-x-1/2">
+                <AnnouncementBar />
+                <Header />
+            </div>
 
             {/* Main Scrollable Content Area */}
-            <main className="flex-1 w-full pb-[80px] pt-[60px] md:pt-[72px] md:pb-0 overflow-y-auto no-scrollbar md:max-w-7xl md:mx-auto">
+            <main className="flex-1 w-full pb-[80px] pt-[96px] md:pt-[112px] md:pb-0 overflow-y-auto no-scrollbar md:max-w-7xl md:mx-auto">
                 <div className="min-h-screen">
                     {children}
                 </div>
